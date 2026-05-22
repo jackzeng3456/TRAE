@@ -2,8 +2,6 @@ package com.tvlive.player
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -11,8 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackException
-import com.google.android.exoplayer2.Player
 import com.tvlive.player.adapter.ChannelAdapter
 import com.tvlive.player.database.ChannelDatabase
 import com.tvlive.player.databinding.ActivityMainBinding
@@ -21,7 +17,7 @@ import com.tvlive.player.model.Channel
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val TAG = "MainActivity"
+        private const val TAG = "SimpleMainActivity"
     }
 
     private lateinit var binding: ActivityMainBinding
@@ -29,29 +25,26 @@ class MainActivity : AppCompatActivity() {
     private lateinit var channelDatabase: ChannelDatabase
     private var channels: List<Channel> = emptyList()
     private var currentChannelIndex = 0
-    private var isPanelVisible = false
-    private val handler = Handler(Looper.getMainLooper())
-
-    private val hidePanelRunnable = Runnable {
-        hidePanel()
-        hideChannelName()
-    }
-
-    private val playerListener = object : Player.Listener {
-        override fun onPlayerError(error: PlaybackException) {
-            Log.e(TAG, "Player error: ${error.message}", error)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         try {
+            Log.d(TAG, "onCreate started")
             binding = ActivityMainBinding.inflate(layoutInflater)
             setContentView(binding.root)
+            Log.d(TAG, "Layout inflated")
 
             channelDatabase = ChannelDatabase(this)
+            Log.d(TAG, "Database initialized")
+
             loadChannels()
+            Log.d(TAG, "Channels loaded")
+
             setupButtons()
+            Log.d(TAG, "Buttons setup")
+
+            Log.d(TAG, "onCreate completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error in onCreate", e)
         }
@@ -60,6 +53,8 @@ class MainActivity : AppCompatActivity() {
     private fun loadChannels() {
         try {
             channels = channelDatabase.getAllChannels()
+            Log.d(TAG, "Loaded ${channels.size} channels")
+
             if (channels.isNotEmpty()) {
                 setupChannelList()
                 playChannel(currentChannelIndex)
@@ -80,7 +75,6 @@ class MainActivity : AppCompatActivity() {
                 if (index != -1) {
                     currentChannelIndex = index
                     playChannel(currentChannelIndex)
-                    resetHideTimer()
                 }
             }
             binding.channelsRecycler.adapter = adapter
@@ -104,32 +98,50 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun playChannel(index: Int) {
-        if (index < 0 || index >= channels.size) return
+        if (index < 0 || index >= channels.size) {
+            Log.w(TAG, "Invalid channel index: $index")
+            return
+        }
 
         try {
             val channel = channels[index]
+            Log.d(TAG, "Playing channel: ${channel.name}")
             currentChannelIndex = index
 
             showChannelName(channel.name)
             updateSelectedChannel()
 
-            player?.removeListener(playerListener)
-            player?.release()
-            
-            player = ExoPlayer.Builder(this).build().also {
-                it.addListener(playerListener)
-                binding.playerView.player = it
-                try {
-                    val mediaItem = MediaItem.fromUri(channel.streamUrl)
-                    it.setMediaItem(mediaItem)
-                    it.prepare()
-                    it.play()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error setting up player", e)
-                }
-            }
+            releasePlayer()
+            initializePlayer(channel.streamUrl)
         } catch (e: Exception) {
             Log.e(TAG, "Error playing channel", e)
+        }
+    }
+
+    private fun initializePlayer(streamUrl: String) {
+        try {
+            Log.d(TAG, "Initializing player with URL: $streamUrl")
+            
+            player = ExoPlayer.Builder(this).build()
+            binding.playerView.player = player
+            
+            val mediaItem = MediaItem.fromUri(streamUrl)
+            player?.setMediaItem(mediaItem)
+            player?.prepare()
+            player?.play()
+            
+            Log.d(TAG, "Player initialized and playing")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing player", e)
+        }
+    }
+
+    private fun releasePlayer() {
+        try {
+            player?.release()
+            player = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing player", e)
         }
     }
 
@@ -137,37 +149,16 @@ class MainActivity : AppCompatActivity() {
         try {
             binding.currentChannelName.text = name
             binding.currentChannelName.visibility = View.VISIBLE
-            resetHideTimer()
+            
+            binding.currentChannelName.postDelayed({
+                try {
+                    binding.currentChannelName.visibility = View.GONE
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error hiding channel name", e)
+                }
+            }, 3000)
         } catch (e: Exception) {
             Log.e(TAG, "Error showing channel name", e)
-        }
-    }
-
-    private fun hideChannelName() {
-        try {
-            binding.currentChannelName.visibility = View.GONE
-        } catch (e: Exception) {
-            Log.e(TAG, "Error hiding channel name", e)
-        }
-    }
-
-    private fun showPanel() {
-        try {
-            isPanelVisible = true
-            binding.channelsPanel.visibility = View.VISIBLE
-            binding.channelsRecycler.requestFocus()
-            resetHideTimer()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error showing panel", e)
-        }
-    }
-
-    private fun hidePanel() {
-        try {
-            isPanelVisible = false
-            binding.channelsPanel.visibility = View.GONE
-        } catch (e: Exception) {
-            Log.e(TAG, "Error hiding panel", e)
         }
     }
 
@@ -187,61 +178,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun resetHideTimer() {
-        try {
-            handler.removeCallbacks(hidePanelRunnable)
-            handler.postDelayed(hidePanelRunnable, 5000)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error resetting hide timer", e)
-        }
-    }
-
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         try {
+            Log.d(TAG, "Key pressed: $keyCode")
+            
             when (keyCode) {
-                KeyEvent.KEYCODE_DPAD_UP -> {
-                    if (isPanelVisible) {
-                        return false
-                    }
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> {
                     changeChannel(-1)
                     return true
                 }
-                KeyEvent.KEYCODE_DPAD_DOWN -> {
-                    if (isPanelVisible) {
-                        return false
-                    }
+                KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN -> {
                     changeChannel(1)
                     return true
                 }
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                    if (!isPanelVisible) {
-                        showPanel()
-                        return true
-                    }
-                    return false
-                }
-                KeyEvent.KEYCODE_CHANNEL_UP -> {
-                    changeChannel(-1)
-                    return true
-                }
-                KeyEvent.KEYCODE_CHANNEL_DOWN -> {
-                    changeChannel(1)
-                    return true
-                }
-                KeyEvent.KEYCODE_MENU -> {
-                    if (isPanelVisible) {
-                        hidePanel()
-                    } else {
-                        showPanel()
-                    }
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_MENU -> {
+                    togglePanel()
                     return true
                 }
                 KeyEvent.KEYCODE_BACK -> {
-                    if (isPanelVisible) {
+                    if (binding.channelsPanel.visibility == View.VISIBLE) {
                         hidePanel()
                         return true
                     }
-                    return super.onKeyDown(keyCode, event)
                 }
             }
         } catch (e: Exception) {
@@ -250,14 +208,47 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
+    private fun togglePanel() {
+        try {
+            if (binding.channelsPanel.visibility == View.VISIBLE) {
+                hidePanel()
+            } else {
+                showPanel()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling panel", e)
+        }
+    }
+
+    private fun showPanel() {
+        try {
+            binding.channelsPanel.visibility = View.VISIBLE
+            binding.channelsRecycler.requestFocus()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing panel", e)
+        }
+    }
+
+    private fun hidePanel() {
+        try {
+            binding.channelsPanel.visibility = View.GONE
+        } catch (e: Exception) {
+            Log.e(TAG, "Error hiding panel", e)
+        }
+    }
+
     private fun changeChannel(direction: Int) {
-        if (channels.isEmpty()) return
+        if (channels.isEmpty()) {
+            Log.d(TAG, "No channels to change")
+            return
+        }
 
         try {
             var newIndex = currentChannelIndex + direction
             if (newIndex < 0) newIndex = channels.size - 1
             if (newIndex >= channels.size) newIndex = 0
 
+            Log.d(TAG, "Changing channel to index: $newIndex")
             playChannel(newIndex)
         } catch (e: Exception) {
             Log.e(TAG, "Error changing channel", e)
@@ -267,6 +258,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         try {
+            Log.d(TAG, "onResume")
             loadChannels()
             player?.play()
         } catch (e: Exception) {
@@ -277,6 +269,7 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         try {
+            Log.d(TAG, "onPause")
             player?.pause()
         } catch (e: Exception) {
             Log.e(TAG, "Error in onPause", e)
@@ -286,10 +279,8 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         try {
-            player?.removeListener(playerListener)
-            player?.release()
-            player = null
-            handler.removeCallbacks(hidePanelRunnable)
+            Log.d(TAG, "onDestroy")
+            releasePlayer()
         } catch (e: Exception) {
             Log.e(TAG, "Error in onDestroy", e)
         }
