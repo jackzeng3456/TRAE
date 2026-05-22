@@ -19,7 +19,7 @@
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Leanback"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
@@ -28,20 +28,9 @@
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ChannelManageActivity"
-            android:exported="false"
-            android:label="@string/channel_manage"
-            android:screenOrientation="landscape" />
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false"
-            android:label="@string/settings"
-            android:screenOrientation="landscape" />
     </application>
 
 </manifest>
