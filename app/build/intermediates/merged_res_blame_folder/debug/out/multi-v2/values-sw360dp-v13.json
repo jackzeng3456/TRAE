@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.tvlive.player.app-mergeDebugResources-36:/values-sw360dp-v13/values-sw360dp-v13.xml",
+            "map": [
+                {
+                    "source": "/root/.gradle/caches/transforms-3/7a380e9ee2e31053e98c62f65fea2a48/transformed/preference-1.0.0/res/values-sw360dp-v13/values-sw360dp-v13.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,127",
+                        "endColumns": "71,64",
+                        "endOffsets": "122,187"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_dialog_channel_edit.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/dialog_channel_edit.xml"
+    },
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_item_channel.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/item_channel.xml"
+    },
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_activity_settings.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_activity_channel_manage.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/activity_channel_manage.xml"
+    },
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_activity_main.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.tvlive.player.app-merged_res-38:/layout_item_channel_manage.xml.flat",
+        "source": "com.tvlive.player.app-main-40:/layout/item_channel_manage.xml"
+    }
+]
