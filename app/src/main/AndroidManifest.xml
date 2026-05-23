@@ -3,12 +3,12 @@
 
     <application
         android:allowBackup="true"
-        android:label="@string/app_name"
-        android:theme="@android:style/Theme.DeviceDefault.Light">
+        android:label="电视直播"
+        android:theme="@android:style/Theme.Material.Light">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="电视直播">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
